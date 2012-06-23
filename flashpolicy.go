@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"time"
 )
 
 func generatePolicyFile(origins []string) []byte {
@@ -56,7 +57,8 @@ func ListenAndServeFlashPolicy(laddr string, origins []string) error {
 
 		go func() {
 			defer conn.Close()
-			conn.SetTimeout(5e9)
+			now := time.Now()
+			conn.SetDeadline(now.Add(time.Duration(5e9)))
 
 			buf := make([]byte, 20)
 			if _, err := io.ReadFull(conn, buf); err != nil {

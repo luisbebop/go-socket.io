@@ -37,7 +37,7 @@ func jsonpPollingHijack(w http.ResponseWriter, req *http.Request, proceed func(S
 
 type jsonpPollingSocket struct {
 	net.Conn
-	i  uint
+	i  uint64
 	rb []byte
 }
 

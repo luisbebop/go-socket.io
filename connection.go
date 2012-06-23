@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"os"
+	"syscall"
 	"sync"
 	"time"
 )
@@ -215,10 +215,11 @@ func (c *Conn) handle(t *Transport, w http.ResponseWriter, req *http.Request) (e
 	}
 
 	err = t.Hijack(w, req, func(socket Socket) {
+		now := time.Now()
 		if t.Type == PollingTransport {
-			socket.SetReadTimeout(c.server.config.PollingTimeout)
+			socket.SetReadDeadline(now.Add(c.server.config.PollingTimeout))
 		}
-		socket.SetWriteTimeout(c.server.config.WriteTimeout)
+		socket.SetWriteDeadline(now.Add(c.server.config.WriteTimeout))
 		if c.socket != nil {
 			c.socket.Close()
 		}
@@ -254,12 +255,12 @@ func (c *Conn) flusher() {
 		if buf.Len() == 0 {
 			err = nil
 		} else if socket == nil {
-			err = os.EINVAL
+			err = syscall.EINVAL
 		} else {
 			for {
 				if _, err = buf.WriteTo(socket); err == nil {
 					break
-				} else if err != os.EAGAIN {
+				} else if err != syscall.EAGAIN {
 					Log.info(c, " flusher: write error: ", err)
 					break
 				}
@@ -279,7 +280,7 @@ func (c *Conn) drain(socket Socket) {
 	for {
 		err := socket.Receive(&buf)
 		if err != nil {
-			if err != os.EAGAIN {
+			if err != syscall.EAGAIN {
 				if neterr, ok := err.(net.Error); ok && neterr.Timeout() {
 					<-c.SendWait(noop(0))
 					Log.debug(c, " drain: lost connection (read timeout, noop sent)")
@@ -319,11 +320,11 @@ func (c *Conn) machine() {
 	}()
 
 	var ticker *time.Ticker
-	wait := func(ns int64) <-chan int64 {
+	wait := func(duration time.Duration) <-chan time.Time {
 		if ticker != nil {
 			ticker.Stop()
 		}
-		ticker = time.NewTicker(ns)
+		ticker = time.NewTicker(duration)
 		return ticker.C
 	}
 

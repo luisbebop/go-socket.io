@@ -1,19 +1,20 @@
 package socketio
+import "time"
 
 type Config struct {
-	CloseTimeout      int64
-	HeartbeatInterval int64
-	HeartbeatTimeout  int64
-	PollingTimeout    int64
+	CloseTimeout      time.Duration
+	HeartbeatInterval time.Duration
+	HeartbeatTimeout  time.Duration
+	PollingTimeout    time.Duration
 	Transports        []*Transport
-	WriteTimeout      int64
+	WriteTimeout      time.Duration
 }
 
 var DefaultConfig = Config{
-	CloseTimeout:      25e9,
-	HeartbeatInterval: 15e9,
-	HeartbeatTimeout:  10e9,
-	PollingTimeout:    20e9,
+	CloseTimeout:      time.Duration(25e9),
+	HeartbeatInterval: time.Duration(15e9),
+	HeartbeatTimeout:  time.Duration(10e9),
+	PollingTimeout:    time.Duration(20e9),
 	Transports:        DefaultTransports,
-	WriteTimeout:      5e9,
+	WriteTimeout:      time.Duration(5e9),
 }
