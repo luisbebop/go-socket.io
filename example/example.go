@@ -1,8 +1,8 @@
 package main
 
 import (
-	"http"
 	"log"
+	"net/http"
 	"socketio"
 	"sync"
 	"time"
@@ -57,7 +57,7 @@ func main() {
 
 		if nick != "" {
 			mu.Lock()
-			nicks[nick] = "", false
+			delete(nicks, nick)
 			sio.Emit("announcement", nick+" disconnected")
 			sio.Emit("nicknames", nicks)
 			mu.Unlock()
