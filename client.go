@@ -2,6 +2,7 @@ package socketio
 
 import (
 	"bytes"
+	"code.google.com/p/go.net/websocket"
 	"errors"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"websocket"
 )
 
 type Client struct {

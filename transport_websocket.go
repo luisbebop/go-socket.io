@@ -1,9 +1,9 @@
 package socketio
 
 import (
+	"code.google.com/p/go.net/websocket"
 	"errors"
 	"net/http"
-	"websocket"
 )
 
 var ErrWebsocketHandshake = errors.New("websocket handshake error")
