@@ -2,7 +2,7 @@ package socketio
 
 import (
 	"fmt"
-	"http"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"

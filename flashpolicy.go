@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"strings"
 )
 
@@ -41,7 +40,7 @@ func generatePolicyFile(origins []string) []byte {
 	return buf.Bytes()
 }
 
-func ListenAndServeFlashPolicy(laddr string, origins []string) os.Error {
+func ListenAndServeFlashPolicy(laddr string, origins []string) error {
 	listener, err := net.Listen("tcp", laddr)
 	if err != nil {
 		return err
