@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Client struct {
@@ -21,6 +22,7 @@ type Client struct {
 	ws       *websocket.Conn
 	mutex    sync.Mutex
 	id       int
+	timeout  time.Duration
 }
 
 func (c *Client) String() string {
@@ -35,30 +37,8 @@ func (c *Client) Emit(ack bool, name string, args ...interface{}) error {
 	return c.Send(&event{Name: name, Args: args, ack: ack, id: id})
 }
 
-func (c *Client) Ping() (err error) {
-	c.Send(heartbeat(0))
-	var incoming string
-	var msg Message
-	for {
-		if err = c.dec.Decode(&msg); err == io.EOF {
-			if err = websocket.Message.Receive(c.ws, &incoming); err != nil {
-				return err
-			}
-			c.dec.Write([]byte(incoming))
-			continue
-		} else if err != nil {
-			return err
-		}
-
-		if msg.typ == MessageHeartbeat {
-			Log.debug(c, " client: received heartbeat: ", msg.Inspect())
-			return nil
-		}
-	}
-	return nil
-}
-
 func (c *Client) Receive(msg *Message) (err error) {
+	c.ws.SetDeadline(time.Now().Add(c.timeout))
 	var incoming string
 	for {
 		if err = c.dec.Decode(msg); err == io.EOF {
@@ -120,6 +100,7 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Send(data interface{}) (err error) {
+	c.ws.SetDeadline(time.Now().Add(c.timeout))
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.buf.Reset()
@@ -129,7 +110,7 @@ func (c *Client) Send(data interface{}) (err error) {
 	return websocket.Message.Send(c.ws, c.buf.String())
 }
 
-func Dial(url_, origin string) (c *Client, err error) {
+func Dial(url_, origin string, timeout time.Duration) (c *Client, err error) {
 	var body []byte
 	var r *http.Response
 
@@ -151,7 +132,7 @@ func Dial(url_, origin string) (c *Client, err error) {
 		return nil, errors.New("server does not support websockets")
 	}
 
-	c = &Client{dec: &Decoder{}, enc: &Encoder{}, id: 1}
+	c = &Client{dec: &Decoder{}, enc: &Encoder{}, id: 1, timeout: timeout}
 	c.sid = parts[0]
 	wsurl := "ws" + url_[4:]
 	if c.ws, err = websocket.Dial(fmt.Sprintf("%s%d/websocket/%s", wsurl, ProtocolVersion, c.sid), "", origin); err != nil {
