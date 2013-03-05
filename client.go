@@ -20,14 +20,19 @@ type Client struct {
 	endpoint string
 	ws       *websocket.Conn
 	mutex    sync.Mutex
+	id       int
 }
 
 func (c *Client) String() string {
 	return c.sid
 }
 
-func (c *Client) Emit(name string, args ...interface{}) error {
-	return c.Send(&event{Name: name, Args: args})
+func (c *Client) Emit(ack bool, name string, args ...interface{}) error {
+	c.mutex.Lock()
+	id := c.id
+	c.id++
+	c.mutex.Unlock()
+	return c.Send(&event{Name: name, Args: args, ack: ack, id: id})
 }
 
 func (c *Client) Receive(msg *Message) (err error) {
@@ -123,7 +128,7 @@ func Dial(url_, origin string) (c *Client, err error) {
 		return nil, errors.New("server does not support websockets")
 	}
 
-	c = &Client{dec: &Decoder{}, enc: &Encoder{}}
+	c = &Client{dec: &Decoder{}, enc: &Encoder{}, id: 1}
 	c.sid = parts[0]
 	wsurl := "ws" + url_[4:]
 	if c.ws, err = websocket.Dial(fmt.Sprintf("%s%d/websocket/%s", wsurl, ProtocolVersion, c.sid), "", origin); err != nil {
