@@ -35,6 +35,29 @@ func (c *Client) Emit(ack bool, name string, args ...interface{}) error {
 	return c.Send(&event{Name: name, Args: args, ack: ack, id: id})
 }
 
+func (c *Client) Ping() (err error) {
+	c.Send(heartbeat(0))
+	var incoming string
+	var msg Message
+	for {
+		if err = c.dec.Decode(&msg); err == io.EOF {
+			if err = websocket.Message.Receive(c.ws, &incoming); err != nil {
+				return err
+			}
+			c.dec.Write([]byte(incoming))
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		if msg.typ == MessageHeartbeat {
+			Log.debug(c, " client: received heartbeat: ", msg.Inspect())
+			return nil
+		}
+	}
+	return nil
+}
+
 func (c *Client) Receive(msg *Message) (err error) {
 	var incoming string
 	for {
