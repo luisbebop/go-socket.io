@@ -110,8 +110,8 @@ func (c *Client) Send(data interface{}) (err error) {
 	return websocket.Message.Send(c.ws, c.buf.String())
 }
 
-func (c *Client) SetDeadline(t time.Time) {
-	c.ws.SetDeadline(t)
+func (c *Client) SetDeadline(t time.Time) error {
+	return c.ws.SetDeadline(t)
 }
 
 func Dial(url_, origin string, timeout time.Duration) (c *Client, err error) {
